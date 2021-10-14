@@ -4,7 +4,7 @@ kind: RoleBinding
 metadata:
   creationTimestamp: null
   name: argocd-admin-mq
-  namespace: wordpress
+  namespace: ap-run
   annotations:
     argocd.argoproj.io/sync-wave: "1"
 roleRef:
@@ -15,78 +15,45 @@ subjects:
   - kind: ServiceAccount
     name: openshift-gitops-argocd-application-controller
     namespace: openshift-gitops
+
 ---
+
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: wordpress-catalog
-  namespace: openshift-operators
+  name: ibm-autopilot-operator
+  namespace: openshift-marketplace
   annotations:
     argocd.argoproj.io/sync-wave: "5"
 spec:
-  displayName: wordpress-operator
-  publisher: ABC Inc.
+  displayName: IBM Autopilot Operator
+  image: us.icr.io/abp-builds/ibm-autopilot-operator-catalog:latest-amd64
+  publisher: IBM
   sourceType: grpc
-  image: amitabhprasad/wordpress-operator-catalog:v0.0.1
+  updateStrategy:
+    registryPoll:
+      interval: 45m
+
 ---
+
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
-  name: wordpress-operator
-  namespace: openshift-operators
+  name: autopilot-operator
+  namespace: ap-run
   annotations:
     argocd.argoproj.io/sync-wave: "7"
 spec:
   channel: alpha
-  name: wordpress-operator
-  source: wordpress-catalog
-  sourceNamespace: openshift-operators
   installPlanApproval: Automatic
-  startingCSV: wordpress-operator.v0.0.1
+  name: autopilot-operator
+  source: ibm-autopilot-operator
+  sourceNamespace: openshift-marketplace
 ---
-apiVersion: batch/v1
-kind: Job
+apiVersion: autopilot.automation.ibm.com/v1alpha1
+kind: AutopilotServer
 metadata:
-  name: health-check
-  labels:
-    jobgroup: health-check
-  annotations:
-    argocd.argoproj.io/sync-wave: "150"
+  name: autopilotserver-sample
+  namespace: ap-run
 spec:
-  template:
-    metadata:
-      name: health-check
-      labels:
-        jobgroup: health-check
-    spec:
-      containers:
-      - name: c
-        image: quay.io/libpod/ubuntu
-        command: ["sh", "-c", "sleep 20 & echo Hello"]
-      restartPolicy: Never
----
-apiVersion: wordpress.example.com/v1
-kind: Wordpress
-metadata:
-  name: wordpress-sample
-  annotations:
-    argocd.argoproj.io/sync-wave: "300"
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-spec:
-  # Add fields here
-  sqlrootpassword: password
----
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  name: wordpress
-  annotations:
-    argocd.argoproj.io/sync-wave: "400"
-spec:
-  path: /
-  to:
-    kind: Service
-    name: wordpress
-    weight: 100
-  port:
-    targetPort: 80
+  foo: bar
