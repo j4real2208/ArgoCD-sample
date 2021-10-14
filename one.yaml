@@ -49,11 +49,3 @@ spec:
   name: autopilot-operator
   source: ibm-autopilot-operator
   sourceNamespace: openshift-marketplace
----
-apiVersion: autopilot.automation.ibm.com/v1alpha1
-kind: AutopilotServer
-metadata:
-  name: autopilotserver-sample
-  namespace: ap-run
-spec:
-  foo: bar
