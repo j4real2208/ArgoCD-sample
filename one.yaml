@@ -70,11 +70,3 @@ spec:
         image: quay.io/libpod/ubuntu
         command: ["sh", "-c", "sleep 20 & echo Hello"]
       restartPolicy: Never
----
-apiVersion: autopilot.automation.ibm.com/v1alpha1
-kind: AutopilotServer
-metadata:
-  name: autopilotserver-sample
-  namespace: ap-run
-spec:
-  foo: bar
