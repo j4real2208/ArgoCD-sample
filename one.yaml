@@ -1,0 +1,92 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  creationTimestamp: null
+  name: argocd-admin-mq
+  namespace: wordpress
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
+subjects:
+  - kind: ServiceAccount
+    name: openshift-gitops-argocd-application-controller
+    namespace: openshift-gitops
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: wordpress-catalog
+  namespace: openshift-operators
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  displayName: wordpress-operator
+  publisher: ABC Inc.
+  sourceType: grpc
+  image: amitabhprasad/wordpress-operator-catalog:v0.0.1
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: wordpress-operator
+  namespace: openshift-operators
+  annotations:
+    argocd.argoproj.io/sync-wave: "7"
+spec:
+  channel: alpha
+  name: wordpress-operator
+  source: wordpress-catalog
+  sourceNamespace: openshift-operators
+  installPlanApproval: Automatic
+  startingCSV: wordpress-operator.v0.0.1
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: health-check
+  labels:
+    jobgroup: health-check
+  annotations:
+    argocd.argoproj.io/sync-wave: "150"
+spec:
+  template:
+    metadata:
+      name: health-check
+      labels:
+        jobgroup: health-check
+    spec:
+      containers:
+      - name: c
+        image: quay.io/libpod/ubuntu
+        command: ["sh", "-c", "sleep 20 & echo Hello"]
+      restartPolicy: Never
+---
+apiVersion: wordpress.example.com/v1
+kind: Wordpress
+metadata:
+  name: wordpress-sample
+  annotations:
+    argocd.argoproj.io/sync-wave: "300"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  # Add fields here
+  sqlrootpassword: password
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: wordpress
+  annotations:
+    argocd.argoproj.io/sync-wave: "400"
+spec:
+  path: /
+  to:
+    kind: Service
+    name: wordpress
+    weight: 100
+  port:
+    targetPort: 80
