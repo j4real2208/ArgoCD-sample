@@ -76,5 +76,7 @@ kind: AutopilotServer
 metadata:
   name: autopilotserver-sample
   namespace: ap-run
+  annotations:
+    argocd.argoproj.io/sync-wave: "650"
 spec:
   foo: bar
